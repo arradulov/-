@@ -1,0 +1,840 @@
+{
+  "info": {
+    "name": "DroneRL_backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Drones (CRUD)",
+      "item": [
+        {
+          "name": "Все дроны",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Drones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Drones"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Дрон по id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Drones/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Drones",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Несуществующий дрон (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Drones/99",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Drones",
+                "99"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Добавить дрон",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Drones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Drones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo Drone\",\n  \"model\": \"X500\",\n  \"batteryLevel\": 80,\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Добавить дрон с низким зарядом и isActive=true (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Drones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Drones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Low Battery Drone\",\n  \"model\": \"X500\",\n  \"batteryLevel\": 10,\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Изменить дрон",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Drones/4",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Drones",
+                "4"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo Drone v2\",\n  \"model\": \"X500\",\n  \"batteryLevel\": 90,\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Drones (бизнес-логика)",
+      "item": [
+        {
+          "name": "Activate: заряд 10% (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Drones/3/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Drones",
+                "3",
+                "activate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Charge +50%",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Drones/3/charge/50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Drones",
+                "3",
+                "charge",
+                "50"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Activate после зарядки",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Drones/3/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Drones",
+                "3",
+                "activate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Deactivate",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Drones/3/deactivate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Drones",
+                "3",
+                "deactivate"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. TrainingSessions (CRUD)",
+      "item": [
+        {
+          "name": "Все обучения",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/TrainingSessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "TrainingSessions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Обучение по id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/TrainingSessions/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "TrainingSessions",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Создать обучение",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/TrainingSessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "TrainingSessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"droneId\": 4,\n  \"algorithm\": \"PPO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Создать обучение для несуществующего дрона (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/TrainingSessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "TrainingSessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"droneId\": 99,\n  \"algorithm\": \"DQN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Изменить обучение",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/TrainingSessions/4",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "TrainingSessions",
+                "4"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"droneId\": 2,\n  \"algorithm\": \"PPO\",\n  \"episodes\": 150,\n  \"totalReward\": 9750,\n  \"isCompleted\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. TrainingSessions (бизнес-логика)",
+      "item": [
+        {
+          "name": "Complete без эпизодов (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/TrainingSessions/5/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "TrainingSessions",
+                "5",
+                "complete"
+              ]
+            }
+          }
+        },
+        {
+          "name": "AddEpisode reward=90",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/TrainingSessions/5/episode/90",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "TrainingSessions",
+                "5",
+                "episode",
+                "90"
+              ]
+            }
+          }
+        },
+        {
+          "name": "AddEpisode reward=110",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/TrainingSessions/5/episode/110",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "TrainingSessions",
+                "5",
+                "episode",
+                "110"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Complete",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/TrainingSessions/5/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "TrainingSessions",
+                "5",
+                "complete"
+              ]
+            }
+          }
+        },
+        {
+          "name": "AddEpisode после завершения (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/TrainingSessions/5/episode/50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "TrainingSessions",
+                "5",
+                "episode",
+                "50"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. FlightResults (CRUD)",
+      "item": [
+        {
+          "name": "Все полёты",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/FlightResults",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "FlightResults"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Полёт по id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/FlightResults/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "FlightResults",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Добавить полёт",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/FlightResults",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "FlightResults"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trainingSessionId\": 5,\n  \"distance\": 300,\n  \"flightTime\": 60,\n  \"collisions\": 0,\n  \"targetReached\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Полёт по незавершённому обучению (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/FlightResults",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "FlightResults"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trainingSessionId\": 4,\n  \"distance\": 100,\n  \"flightTime\": 30,\n  \"collisions\": 0,\n  \"targetReached\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Изменить полёт",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/FlightResults/3",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "FlightResults",
+                "3"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trainingSessionId\": 2,\n  \"distance\": 120,\n  \"flightTime\": 45,\n  \"collisions\": 0,\n  \"targetReached\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. FlightResults (бизнес-логика)",
+      "item": [
+        {
+          "name": "RegisterCollision",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/FlightResults/1/collision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "FlightResults",
+                "1",
+                "collision"
+              ]
+            }
+          }
+        },
+        {
+          "name": "ReachTarget",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/FlightResults/3/reachTarget",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "FlightResults",
+                "3",
+                "reachTarget"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Analytics (LINQ)",
+      "item": [
+        {
+          "name": "Обучения дрона (Where + Select)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Analytics/drone/1/trainings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Analytics",
+                "drone",
+                "1",
+                "trainings"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Полёты дрона (Where + Join + Select)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Analytics/drone/1/flights",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Analytics",
+                "drone",
+                "1",
+                "flights"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Успешные полёты (Where + Join + Select)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Analytics/successfulFlights",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Analytics",
+                "successfulFlights"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Статистика алгоритмов (GroupBy + Average)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Analytics/algorithms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Analytics",
+                "algorithms"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Аналитика по несуществующему дрону (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Analytics/drone/99/trainings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Analytics",
+                "drone",
+                "99",
+                "trainings"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Удаление (в конце)",
+      "item": [
+        {
+          "name": "Удалить полёт",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/FlightResults/5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "FlightResults",
+                "5"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Удалить обучение",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/TrainingSessions/5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "TrainingSessions",
+                "5"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Удалить дрон (вместе с обучениями и полётами)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Drones/4",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Drones",
+                "4"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Удалённый дрон (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Drones/4",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "Drones",
+                "4"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    }
+  ]
+}
