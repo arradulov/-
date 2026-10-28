@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using DroneRL_backend.Models;
 
@@ -13,9 +14,26 @@ namespace DroneRL_backend
         public DbSet<Drone> Drones { get; set; }
         public DbSet<TrainingSession> TrainingSessions { get; set; }
         public DbSet<FlightResult> FlightResults { get; set; }
+        public DbSet<User> Users { get; set; }
+
+        // Есть ли у дрона незавершённый полёт
+        public bool IsDroneFlying(int droneId)
+        {
+            return FlightResults
+                .Where(f => !f.IsFinished)
+                .Join(TrainingSessions, f => f.TrainingSessionId, s => s.Id, (f, s) => s.DroneId)
+                .Any(id => id == droneId);
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Drone>().Property(d => d.Name).HasMaxLength(100).IsRequired();
+            modelBuilder.Entity<Drone>().Property(d => d.Model).HasMaxLength(100).IsRequired();
+            modelBuilder.Entity<TrainingSession>().Property(s => s.Algorithm).HasMaxLength(10).IsRequired();
+            modelBuilder.Entity<User>().Property(u => u.Login).HasMaxLength(50).IsRequired();
+            modelBuilder.Entity<User>().Property(u => u.Role).HasMaxLength(10).IsRequired();
+            modelBuilder.Entity<User>().HasIndex(u => u.Login).IsUnique();
+
             // Связи: Drone 1 -> N TrainingSession 1 -> N FlightResult (каскадное удаление)
             modelBuilder.Entity<TrainingSession>()
                 .HasOne<Drone>()
@@ -44,10 +62,16 @@ namespace DroneRL_backend
             );
 
             modelBuilder.Entity<FlightResult>().HasData(
-                new FlightResult() { Id = 1, TrainingSessionId = 1, Distance = 250, FlightTime = 50, Collisions = 0, TargetReached = true },   // успешный
-                new FlightResult() { Id = 2, TrainingSessionId = 2, Distance = 180, FlightTime = 60, Collisions = 2, TargetReached = true },   // со столкновениями
-                new FlightResult() { Id = 3, TrainingSessionId = 2, Distance = 90, FlightTime = 45, Collisions = 0, TargetReached = false },   // цель не достигнута
-                new FlightResult() { Id = 4, TrainingSessionId = 3, Distance = 400, FlightTime = 64, Collisions = 0, TargetReached = true }    // успешный
+                new FlightResult() { Id = 1, TrainingSessionId = 1, Distance = 250, FlightTime = 50, Collisions = 0, TargetReached = true, IsFinished = true },   // успешный
+                new FlightResult() { Id = 2, TrainingSessionId = 2, Distance = 180, FlightTime = 60, Collisions = 2, TargetReached = true, IsFinished = true },   // со столкновениями
+                new FlightResult() { Id = 3, TrainingSessionId = 2, Distance = 90, FlightTime = 45, Collisions = 0, TargetReached = false, IsFinished = true },   // цель не достигнута
+                new FlightResult() { Id = 4, TrainingSessionId = 3, Distance = 400, FlightTime = 64, Collisions = 0, TargetReached = true, IsFinished = true }    // успешный
+            );
+
+            // Пользователи: admin / admin123 и user / user123 (хранятся только хеши паролей)
+            modelBuilder.Entity<User>().HasData(
+                new User() { Id = 1, Login = "admin", Role = Roles.Admin, PasswordHash = "IVbJph+Qf6bC1Ktj2W7UIA==:BkGU0/r+ES+X/NNzGuvikK8BqrbxV4FutjTp+fuPhlw=" },
+                new User() { Id = 2, Login = "user", Role = Roles.User, PasswordHash = "qUGEZz3dtF4V17r+vWf//g==:BZyd1Zch4fT8BLhsWA+7tgEFdYQDMjwnF/imhY6GHcY=" }
             );
         }
     }

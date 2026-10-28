@@ -1,7 +1,10 @@
 using System;
+using DroneRL_backend.Exceptions;
 
 namespace DroneRL_backend.Models
 {
+    // Тестовый полёт обученного дрона.
+    // Жизненный цикл: старт → (столкновения, достижение цели) → завершение с телеметрией.
     public class FlightResult
     {
         public int Id { get; set; }
@@ -10,15 +13,33 @@ namespace DroneRL_backend.Models
         public double FlightTime { get; set; }  // секунды
         public int Collisions { get; set; }
         public bool TargetReached { get; set; }
+        public bool IsFinished { get; set; }
 
         public void RegisterCollision()
         {
+            if (IsFinished)
+                throw new BusinessRuleException("Flight is already finished");
             Collisions++;
         }
 
         public void ReachTarget()
         {
+            if (IsFinished)
+                throw new BusinessRuleException("Flight is already finished");
+            if (TargetReached)
+                throw new BusinessRuleException("Target is already reached");
             TargetReached = true;
+        }
+
+        public void Finish(double distance, double flightTime)
+        {
+            if (IsFinished)
+                throw new BusinessRuleException("Flight is already finished");
+            if (distance < 0 || flightTime <= 0)
+                throw new BusinessRuleException("Distance must be >= 0 and FlightTime must be > 0");
+            Distance = distance;
+            FlightTime = flightTime;
+            IsFinished = true;
         }
 
         // Средняя скорость, м/с
@@ -29,13 +50,13 @@ namespace DroneRL_backend.Models
             return Math.Round(Distance / FlightTime, 2);
         }
 
-        // Успешный полёт: цель достигнута и не было столкновений
+        // Успешный полёт: завершён, цель достигнута, столкновений не было
         public bool IsSuccessful()
         {
-            return TargetReached && Collisions == 0;
+            return IsFinished && TargetReached && Collisions == 0;
         }
 
-        // Расход батареи на полёт: 1% за каждые 30 секунд
+        // Расход батареи: 1% за каждые 30 секунд полёта
         public int GetBatteryCost()
         {
             return (int)Math.Ceiling(FlightTime / 30);

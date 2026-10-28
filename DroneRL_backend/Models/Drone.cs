@@ -1,4 +1,5 @@
 using System;
+using DroneRL_backend.Exceptions;
 
 namespace DroneRL_backend.Models
 {
@@ -9,37 +10,42 @@ namespace DroneRL_backend.Models
         public int Id { get; set; }
         public string Name { get; set; }
         public string Model { get; set; }
-        public int BatteryLevel { get; set; } = 100;
+        public int BatteryLevel { get; set; }
         public bool IsActive { get; set; }
 
-        // Нельзя активировать дрон с низким зарядом
-        public bool Activate()
+        // Нельзя активировать уже активный дрон или дрон с низким зарядом
+        public void Activate()
         {
+            if (IsActive)
+                throw new BusinessRuleException($"Drone '{Name}' is already active");
             if (BatteryLevel < MinBatteryToActivate)
-                return false;
+                throw new BusinessRuleException($"Cannot activate drone: battery {BatteryLevel}% is below {MinBatteryToActivate}%");
             IsActive = true;
-            return true;
         }
 
         public void Deactivate()
         {
+            if (!IsActive)
+                throw new BusinessRuleException($"Drone '{Name}' is already inactive");
             IsActive = false;
         }
 
         public void Charge(int percent)
         {
-            BatteryLevel = Math.Min(100, BatteryLevel + Math.Max(0, percent));
+            if (percent <= 0)
+                throw new BusinessRuleException("Charge percent must be positive");
+            if (BatteryLevel == 100)
+                throw new BusinessRuleException("Battery is already full");
+            BatteryLevel = Math.Min(100, BatteryLevel + percent);
         }
 
-        // Списывает заряд; если заряда не хватает — ничего не меняет и возвращает false
-        public bool ConsumeBattery(int percent)
+        // Полёт уже состоялся, поэтому заряд списывается в любом случае (но не ниже 0).
+        // Если заряд упал ниже минимума — дрон автоматически выключается.
+        public void ConsumeBattery(int percent)
         {
-            if (percent < 0 || percent > BatteryLevel)
-                return false;
-            BatteryLevel -= percent;
+            BatteryLevel = Math.Max(0, BatteryLevel - percent);
             if (BatteryLevel < MinBatteryToActivate)
-                Deactivate();
-            return true;
+                IsActive = false;
         }
     }
 }

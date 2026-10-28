@@ -1,129 +1,76 @@
 using System.Collections.Generic;
-using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using DroneRL_backend.Dtos;
 using DroneRL_backend.Models;
+using DroneRL_backend.Services;
 
 namespace DroneRL_backend.Controllers
 {
+    // Чтение доступно всем, изменение данных — только администратору
     [Route("api/[controller]")]
     [ApiController]
-    public class DronesController : ControllerBase
+    public class DronesController : ApiControllerBase
     {
-        private readonly AppDbContext db;
+        private readonly DroneService service;
 
-        public DronesController(AppDbContext db)
+        public DronesController(DroneService service)
         {
-            this.db = db;
+            this.service = service;
         }
 
         [HttpGet]
-        public List<Drone> GetDrones()
+        public ActionResult<List<DroneDto>> GetDrones()
         {
-            return db.Drones.OrderBy(d => d.Id).ToList();
+            return Execute(() => service.GetAll());
         }
 
         [HttpGet("{id}")]
-        public ActionResult<Drone> GetDrone(int id)
+        public ActionResult<DroneDto> GetDrone(int id)
         {
-            var drone = db.Drones.FirstOrDefault(d => d.Id == id);
-            if (drone == null)
-                return NotFound(new { message = $"Drone {id} not found" });
-            return drone;
+            return Execute(() => service.GetById(id));
         }
 
         [HttpPost]
-        public ActionResult<Drone> AddDrone([FromBody] Drone drone)
+        [Authorize(Roles = Roles.Admin)]
+        public ActionResult<DroneDto> AddDrone([FromBody] DroneCreateDto dto)
         {
-            if (string.IsNullOrWhiteSpace(drone.Name))
-                return BadRequest(new { message = "Name is required" });
-            if (drone.BatteryLevel < 0 || drone.BatteryLevel > 100)
-                return BadRequest(new { message = "BatteryLevel must be from 0 to 100" });
-
-            // Активность включаем только через бизнес-метод Activate()
-            bool wantActive = drone.IsActive;
-            drone.IsActive = false;
-            if (wantActive && !drone.Activate())
-                return BadRequest(new { message = $"Cannot activate drone: battery below {Drone.MinBatteryToActivate}%" });
-
-            drone.Id = 0; // id выдаёт база данных
-            db.Drones.Add(drone);
-            db.SaveChanges();
-            return CreatedAtAction(nameof(GetDrone), new { id = drone.Id }, drone);
+            return ExecuteCreated(() => service.Create(dto), nameof(GetDrone), d => new { id = d.Id });
         }
 
         [HttpPut("{id}")]
-        public ActionResult<Drone> UpdateDrone(int id, [FromBody] Drone data)
+        [Authorize(Roles = Roles.Admin)]
+        public ActionResult<DroneDto> UpdateDrone(int id, [FromBody] DroneUpdateDto dto)
         {
-            var drone = db.Drones.FirstOrDefault(d => d.Id == id);
-            if (drone == null)
-                return NotFound(new { message = $"Drone {id} not found" });
-            if (string.IsNullOrWhiteSpace(data.Name))
-                return BadRequest(new { message = "Name is required" });
-            if (data.BatteryLevel < 0 || data.BatteryLevel > 100)
-                return BadRequest(new { message = "BatteryLevel must be from 0 to 100" });
-
-            drone.Name = data.Name;
-            drone.Model = data.Model;
-            drone.BatteryLevel = data.BatteryLevel;
-            if (data.IsActive)
-            {
-                if (!drone.Activate())
-                    return BadRequest(new { message = $"Cannot activate drone: battery below {Drone.MinBatteryToActivate}%" });
-            }
-            else
-                drone.Deactivate();
-
-            db.SaveChanges();
-            return drone;
+            return Execute(() => service.Update(id, dto));
         }
 
-        // Обучения и полёты дрона удаляются каскадно (настроено в AppDbContext)
         [HttpDelete("{id}")]
+        [Authorize(Roles = Roles.Admin)]
         public IActionResult DeleteDrone(int id)
         {
-            var drone = db.Drones.FirstOrDefault(d => d.Id == id);
-            if (drone == null)
-                return NotFound(new { message = $"Drone {id} not found" });
-
-            db.Drones.Remove(drone);
-            db.SaveChanges();
-            return NoContent();
+            return ExecuteNoContent(() => service.Delete(id));
         }
 
         [HttpPost("{id}/activate")]
-        public ActionResult<Drone> Activate(int id)
+        [Authorize(Roles = Roles.Admin)]
+        public ActionResult<DroneDto> Activate(int id)
         {
-            var drone = db.Drones.FirstOrDefault(d => d.Id == id);
-            if (drone == null)
-                return NotFound(new { message = $"Drone {id} not found" });
-            if (!drone.Activate())
-                return BadRequest(new { message = $"Cannot activate drone: battery {drone.BatteryLevel}% is below {Drone.MinBatteryToActivate}%" });
-            db.SaveChanges();
-            return drone;
+            return Execute(() => service.Activate(id));
         }
 
         [HttpPost("{id}/deactivate")]
-        public ActionResult<Drone> Deactivate(int id)
+        [Authorize(Roles = Roles.Admin)]
+        public ActionResult<DroneDto> Deactivate(int id)
         {
-            var drone = db.Drones.FirstOrDefault(d => d.Id == id);
-            if (drone == null)
-                return NotFound(new { message = $"Drone {id} not found" });
-            drone.Deactivate();
-            db.SaveChanges();
-            return drone;
+            return Execute(() => service.Deactivate(id));
         }
 
-        [HttpPost("{id}/charge/{percent}")]
-        public ActionResult<Drone> Charge(int id, int percent)
+        [HttpPost("{id}/charge")]
+        [Authorize(Roles = Roles.Admin)]
+        public ActionResult<DroneDto> Charge(int id, [FromBody] ChargeDto dto)
         {
-            var drone = db.Drones.FirstOrDefault(d => d.Id == id);
-            if (drone == null)
-                return NotFound(new { message = $"Drone {id} not found" });
-            if (percent <= 0)
-                return BadRequest(new { message = "percent must be positive" });
-            drone.Charge(percent);
-            db.SaveChanges();
-            return drone;
+            return Execute(() => service.Charge(id, dto.Percent));
         }
     }
 }
