@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DroneRL_backend.Dtos;
@@ -20,9 +21,9 @@ namespace DroneRL_backend.Controllers
 
         // Вход по логину и паролю → JWT-токен
         [HttpPost("login")]
-        public ActionResult<TokenDto> Login([FromBody] LoginDto dto)
+        public async Task<ActionResult<TokenDto>> Login([FromBody] LoginDto dto)
         {
-            var token = service.Login(dto);
+            var token = await service.LoginAsync(dto);
             if (token == null)
                 return Unauthorized(new { message = "Wrong login or password" });
             return token;
@@ -42,16 +43,16 @@ namespace DroneRL_backend.Controllers
 
         [HttpPost("register")]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<UserDto> Register([FromBody] RegisterDto dto)
+        public async Task<ActionResult<UserDto>> Register([FromBody] RegisterDto dto)
         {
-            return ExecuteCreated(() => service.Register(dto), nameof(GetUsers), u => null);
+            return await ExecuteCreatedAsync(() => service.RegisterAsync(dto), nameof(GetUsers), u => null);
         }
 
         [HttpGet("users")]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<List<UserDto>> GetUsers()
+        public async Task<ActionResult<List<UserDto>>> GetUsers()
         {
-            return Execute(() => service.GetUsers());
+            return await ExecuteAsync(() => service.GetUsersAsync());
         }
     }
 }

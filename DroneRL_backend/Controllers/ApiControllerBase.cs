@@ -1,19 +1,20 @@
 using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using DroneRL_backend.Exceptions;
 
 namespace DroneRL_backend.Controllers
 {
-    // Общий предок контроллеров: вызывает метод сервиса и превращает
+    // Общий предок контроллеров: асинхронно вызывает метод сервиса и превращает
     // исключения бизнес-логики в HTTP-ответы (404 / 400) с сообщением об ошибке
     public abstract class ApiControllerBase : ControllerBase
     {
         // 200 OK + результат
-        protected ActionResult<T> Execute<T>(Func<T> action)
+        protected async Task<ActionResult<T>> ExecuteAsync<T>(Func<Task<T>> action)
         {
             try
             {
-                return action();
+                return await action();
             }
             catch (Exception e) when (IsApiError(e))
             {
@@ -22,11 +23,11 @@ namespace DroneRL_backend.Controllers
         }
 
         // 201 Created + результат и ссылка на созданный объект
-        protected ActionResult<T> ExecuteCreated<T>(Func<T> action, string getActionName, Func<T, object> routeValues)
+        protected async Task<ActionResult<T>> ExecuteCreatedAsync<T>(Func<Task<T>> action, string getActionName, Func<T, object> routeValues)
         {
             try
             {
-                var result = action();
+                var result = await action();
                 return CreatedAtAction(getActionName, routeValues(result), result);
             }
             catch (Exception e) when (IsApiError(e))
@@ -36,11 +37,11 @@ namespace DroneRL_backend.Controllers
         }
 
         // 204 No Content
-        protected IActionResult ExecuteNoContent(Action action)
+        protected async Task<IActionResult> ExecuteNoContentAsync(Func<Task> action)
         {
             try
             {
-                action();
+                await action();
                 return NoContent();
             }
             catch (Exception e) when (IsApiError(e))

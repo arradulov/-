@@ -20,6 +20,13 @@
 | `Startup.cs` | DI, JWT-авторизация, Swagger с кнопкой Authorize |
 | `DroneRL_backend.postman_collection.json` | Коллекция запросов Postman (импортируется и в Bruno) |
 
+## Асинхронность
+
+Все обращения к БД асинхронные: в сервисах используются `ToListAsync`, `FirstOrDefaultAsync`, `AnyAsync`,
+`SaveChangesAsync`, методы сервисов возвращают `Task<...>` (`GetAllAsync`, `CreateAsync`, …), а действия контроллеров —
+`async Task<ActionResult<...>>` с `await`. Пока база выполняет запрос, поток сервера не блокируется и обслуживает
+другие запросы. Бизнес-методы моделей синхронные — они работают только с данными в памяти.
+
 ## Бизнес-логика (в моделях)
 
 **Drone** — `Activate()` (нельзя при заряде < 20 % и если уже активен), `Deactivate()`, `Charge(%)` (не выше 100 %),

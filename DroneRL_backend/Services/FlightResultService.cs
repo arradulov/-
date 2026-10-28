@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using DroneRL_backend.Dtos;
 using DroneRL_backend.Exceptions;
 using DroneRL_backend.Models;
@@ -15,83 +17,80 @@ namespace DroneRL_backend.Services
             this.db = db;
         }
 
-        public List<FlightResultDto> GetAll()
+        public async Task<List<FlightResultDto>> GetAllAsync()
         {
-            return db.FlightResults
-                .OrderBy(f => f.Id)
-                .ToList()
-                .Select(FlightResultDto.From)
-                .ToList();
+            var flights = await db.FlightResults.OrderBy(f => f.Id).ToListAsync();
+            return flights.Select(FlightResultDto.From).ToList();
         }
 
-        public FlightResultDto GetById(int id)
+        public async Task<FlightResultDto> GetByIdAsync(int id)
         {
-            return FlightResultDto.From(Find(id));
+            return FlightResultDto.From(await FindAsync(id));
         }
 
         // Тестовый полёт можно начать только после завершённого обучения,
         // на активном дроне, который сейчас не находится в другом полёте
-        public FlightResultDto Start(FlightStartDto dto)
+        public async Task<FlightResultDto> StartAsync(FlightStartDto dto)
         {
-            var session = db.TrainingSessions.FirstOrDefault(s => s.Id == dto.TrainingSessionId)
+            var session = await db.TrainingSessions.FirstOrDefaultAsync(s => s.Id == dto.TrainingSessionId)
                 ?? throw new BusinessRuleException($"TrainingSession {dto.TrainingSessionId} not found");
             if (!session.IsCompleted)
                 throw new BusinessRuleException("Test flight is possible only after training is completed");
 
-            var drone = db.Drones.First(d => d.Id == session.DroneId);
+            var drone = await db.Drones.FirstAsync(d => d.Id == session.DroneId);
             if (!drone.IsActive)
                 throw new BusinessRuleException($"Drone '{drone.Name}' is not active");
-            if (db.IsDroneFlying(drone.Id))
+            if (await db.IsDroneFlyingAsync(drone.Id))
                 throw new BusinessRuleException($"Drone '{drone.Name}' is already in flight");
 
             var flight = new FlightResult { TrainingSessionId = session.Id };
             db.FlightResults.Add(flight);
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             return FlightResultDto.From(flight);
         }
 
-        public FlightResultDto RegisterCollision(int id)
+        public async Task<FlightResultDto> RegisterCollisionAsync(int id)
         {
-            var flight = Find(id);
+            var flight = await FindAsync(id);
             flight.RegisterCollision();
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             return FlightResultDto.From(flight);
         }
 
-        public FlightResultDto ReachTarget(int id)
+        public async Task<FlightResultDto> ReachTargetAsync(int id)
         {
-            var flight = Find(id);
+            var flight = await FindAsync(id);
             flight.ReachTarget();
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             return FlightResultDto.From(flight);
         }
 
         // Завершение полёта: записываем телеметрию и списываем заряд дрона
-        public FlightResultDto Finish(int id, FlightFinishDto dto)
+        public async Task<FlightResultDto> FinishAsync(int id, FlightFinishDto dto)
         {
-            var flight = Find(id);
+            var flight = await FindAsync(id);
             flight.Finish(dto.Distance, dto.FlightTime);
 
-            var drone = db.TrainingSessions
+            var drone = await db.TrainingSessions
                 .Where(s => s.Id == flight.TrainingSessionId)
                 .Join(db.Drones, s => s.DroneId, d => d.Id, (s, d) => d)
-                .First();
+                .FirstAsync();
             drone.ConsumeBattery(flight.GetBatteryCost());
 
-            db.SaveChanges(); // одной транзакцией сохраняются и полёт, и новый заряд дрона
+            await db.SaveChangesAsync(); // одной транзакцией сохраняются и полёт, и новый заряд дрона
             return FlightResultDto.From(flight);
         }
 
-        public void Delete(int id)
+        public async Task DeleteAsync(int id)
         {
-            var flight = Find(id);
+            var flight = await FindAsync(id);
             db.FlightResults.Remove(flight);
-            db.SaveChanges();
+            await db.SaveChangesAsync();
         }
 
-        private FlightResult Find(int id)
+        private async Task<FlightResult> FindAsync(int id)
         {
-            return db.FlightResults.FirstOrDefault(f => f.Id == id)
+            return await db.FlightResults.FirstOrDefaultAsync(f => f.Id == id)
                 ?? throw new NotFoundException($"FlightResult {id} not found");
         }
     }

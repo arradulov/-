@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DroneRL_backend.Dtos;
@@ -20,27 +21,27 @@ namespace DroneRL_backend.Controllers
         }
 
         [HttpGet("drone/{droneId}/trainings")]
-        public ActionResult<List<DroneTrainingDto>> GetDroneTrainings(int droneId)
+        public async Task<ActionResult<List<DroneTrainingDto>>> GetDroneTrainings(int droneId)
         {
-            return Execute(() => service.GetDroneTrainings(droneId));
+            return await ExecuteAsync(() => service.GetDroneTrainingsAsync(droneId));
         }
 
         [HttpGet("drone/{droneId}/flights")]
-        public ActionResult<List<DroneFlightDto>> GetDroneFlights(int droneId)
+        public async Task<ActionResult<List<DroneFlightDto>>> GetDroneFlights(int droneId)
         {
-            return Execute(() => service.GetDroneFlights(droneId));
+            return await ExecuteAsync(() => service.GetDroneFlightsAsync(droneId));
         }
 
         [HttpGet("successfulFlights")]
-        public ActionResult<List<SuccessfulFlightDto>> GetSuccessfulFlights()
+        public async Task<ActionResult<List<SuccessfulFlightDto>>> GetSuccessfulFlights()
         {
-            return Execute(() => service.GetSuccessfulFlights());
+            return await ExecuteAsync(() => service.GetSuccessfulFlightsAsync());
         }
 
         [HttpGet("algorithms")]
-        public ActionResult<List<AlgorithmStatsDto>> GetAlgorithmsStatistics()
+        public async Task<ActionResult<List<AlgorithmStatsDto>>> GetAlgorithmsStatistics()
         {
-            return Execute(() => service.GetAlgorithmStatistics());
+            return await ExecuteAsync(() => service.GetAlgorithmStatisticsAsync());
         }
     }
 }

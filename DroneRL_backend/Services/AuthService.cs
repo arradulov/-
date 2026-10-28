@@ -4,6 +4,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using DroneRL_backend.Dtos;
 using DroneRL_backend.Exceptions;
@@ -34,30 +36,31 @@ namespace DroneRL_backend.Services
         }
 
         // Проверяет логин и пароль; при успехе выдаёт JWT-токен, иначе возвращает null
-        public TokenDto Login(LoginDto dto)
+        public async Task<TokenDto> LoginAsync(LoginDto dto)
         {
-            var user = db.Users.FirstOrDefault(u => u.Login == dto.Login);
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Login == dto.Login);
             if (user == null || !user.CheckPassword(dto.Password))
                 return null;
             return GenerateToken(user);
         }
 
-        public UserDto Register(RegisterDto dto)
+        public async Task<UserDto> RegisterAsync(RegisterDto dto)
         {
             var login = dto.Login.Trim();
-            if (db.Users.Any(u => u.Login == login))
+            if (await db.Users.AnyAsync(u => u.Login == login))
                 throw new BusinessRuleException($"User '{login}' already exists");
 
             var user = new User { Login = login, Role = dto.Role ?? Roles.User };
             user.SetPassword(dto.Password);
             db.Users.Add(user);
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             return UserDto.From(user);
         }
 
-        public List<UserDto> GetUsers()
+        public async Task<List<UserDto>> GetUsersAsync()
         {
-            return db.Users.OrderBy(u => u.Id).ToList().Select(UserDto.From).ToList();
+            var users = await db.Users.OrderBy(u => u.Id).ToListAsync();
+            return users.Select(UserDto.From).ToList();
         }
 
         private TokenDto GenerateToken(User user)

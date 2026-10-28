@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using DroneRL_backend.Dtos;
 using DroneRL_backend.Exceptions;
 using DroneRL_backend.Models;
@@ -7,6 +9,7 @@ using DroneRL_backend.Models;
 namespace DroneRL_backend.Services
 {
     // Вся работа с таблицей дронов. Контроллер вызывает только методы сервиса.
+    // Запросы к БД асинхронные: пока база отвечает, поток сервера обслуживает другие запросы.
     public class DroneService
     {
         private readonly AppDbContext db;
@@ -16,21 +19,18 @@ namespace DroneRL_backend.Services
             this.db = db;
         }
 
-        public List<DroneDto> GetAll()
+        public async Task<List<DroneDto>> GetAllAsync()
         {
-            return db.Drones
-                .OrderBy(d => d.Id)
-                .ToList()
-                .Select(DroneDto.From)
-                .ToList();
+            var drones = await db.Drones.OrderBy(d => d.Id).ToListAsync();
+            return drones.Select(DroneDto.From).ToList();
         }
 
-        public DroneDto GetById(int id)
+        public async Task<DroneDto> GetByIdAsync(int id)
         {
-            return DroneDto.From(Find(id));
+            return DroneDto.From(await FindAsync(id));
         }
 
-        public DroneDto Create(DroneCreateDto dto)
+        public async Task<DroneDto> CreateAsync(DroneCreateDto dto)
         {
             var drone = new Drone
             {
@@ -40,63 +40,63 @@ namespace DroneRL_backend.Services
                 IsActive = false
             };
             db.Drones.Add(drone);
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             return DroneDto.From(drone);
         }
 
-        public DroneDto Update(int id, DroneUpdateDto dto)
+        public async Task<DroneDto> UpdateAsync(int id, DroneUpdateDto dto)
         {
-            var drone = Find(id);
+            var drone = await FindAsync(id);
             drone.Name = dto.Name.Trim();
             drone.Model = dto.Model.Trim();
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             return DroneDto.From(drone);
         }
 
         // Обучения и полёты дрона удаляются каскадно (настроено в AppDbContext)
-        public void Delete(int id)
+        public async Task DeleteAsync(int id)
         {
-            var drone = Find(id);
-            EnsureNotFlying(drone);
+            var drone = await FindAsync(id);
+            await EnsureNotFlyingAsync(drone);
             db.Drones.Remove(drone);
-            db.SaveChanges();
+            await db.SaveChangesAsync();
         }
 
-        public DroneDto Activate(int id)
+        public async Task<DroneDto> ActivateAsync(int id)
         {
-            var drone = Find(id);
+            var drone = await FindAsync(id);
             drone.Activate();
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             return DroneDto.From(drone);
         }
 
-        public DroneDto Deactivate(int id)
+        public async Task<DroneDto> DeactivateAsync(int id)
         {
-            var drone = Find(id);
-            EnsureNotFlying(drone);
+            var drone = await FindAsync(id);
+            await EnsureNotFlyingAsync(drone);
             drone.Deactivate();
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             return DroneDto.From(drone);
         }
 
-        public DroneDto Charge(int id, int percent)
+        public async Task<DroneDto> ChargeAsync(int id, int percent)
         {
-            var drone = Find(id);
-            EnsureNotFlying(drone);
+            var drone = await FindAsync(id);
+            await EnsureNotFlyingAsync(drone);
             drone.Charge(percent);
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             return DroneDto.From(drone);
         }
 
-        private Drone Find(int id)
+        private async Task<Drone> FindAsync(int id)
         {
-            return db.Drones.FirstOrDefault(d => d.Id == id)
+            return await db.Drones.FirstOrDefaultAsync(d => d.Id == id)
                 ?? throw new NotFoundException($"Drone {id} not found");
         }
 
-        private void EnsureNotFlying(Drone drone)
+        private async Task EnsureNotFlyingAsync(Drone drone)
         {
-            if (db.IsDroneFlying(drone.Id))
+            if (await db.IsDroneFlyingAsync(drone.Id))
                 throw new BusinessRuleException($"Drone '{drone.Name}' is in flight now");
         }
     }

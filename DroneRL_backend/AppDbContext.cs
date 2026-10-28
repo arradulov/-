@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using DroneRL_backend.Models;
 
@@ -17,12 +18,12 @@ namespace DroneRL_backend
         public DbSet<User> Users { get; set; }
 
         // Есть ли у дрона незавершённый полёт
-        public bool IsDroneFlying(int droneId)
+        public Task<bool> IsDroneFlyingAsync(int droneId)
         {
             return FlightResults
                 .Where(f => !f.IsFinished)
                 .Join(TrainingSessions, f => f.TrainingSessionId, s => s.Id, (f, s) => s.DroneId)
-                .Any(id => id == droneId);
+                .AnyAsync(id => id == droneId);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

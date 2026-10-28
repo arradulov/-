@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DroneRL_backend.Dtos;
@@ -22,50 +23,50 @@ namespace DroneRL_backend.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<FlightResultDto>> GetFlights()
+        public async Task<ActionResult<List<FlightResultDto>>> GetFlights()
         {
-            return Execute(() => service.GetAll());
+            return await ExecuteAsync(() => service.GetAllAsync());
         }
 
         [HttpGet("{id}")]
-        public ActionResult<FlightResultDto> GetFlight(int id)
+        public async Task<ActionResult<FlightResultDto>> GetFlight(int id)
         {
-            return Execute(() => service.GetById(id));
+            return await ExecuteAsync(() => service.GetByIdAsync(id));
         }
 
         [HttpPost]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<FlightResultDto> StartFlight([FromBody] FlightStartDto dto)
+        public async Task<ActionResult<FlightResultDto>> StartFlight([FromBody] FlightStartDto dto)
         {
-            return ExecuteCreated(() => service.Start(dto), nameof(GetFlight), f => new { id = f.Id });
+            return await ExecuteCreatedAsync(() => service.StartAsync(dto), nameof(GetFlight), f => new { id = f.Id });
         }
 
         [HttpPost("{id}/collision")]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<FlightResultDto> RegisterCollision(int id)
+        public async Task<ActionResult<FlightResultDto>> RegisterCollision(int id)
         {
-            return Execute(() => service.RegisterCollision(id));
+            return await ExecuteAsync(() => service.RegisterCollisionAsync(id));
         }
 
         [HttpPost("{id}/reachTarget")]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<FlightResultDto> ReachTarget(int id)
+        public async Task<ActionResult<FlightResultDto>> ReachTarget(int id)
         {
-            return Execute(() => service.ReachTarget(id));
+            return await ExecuteAsync(() => service.ReachTargetAsync(id));
         }
 
         [HttpPost("{id}/finish")]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<FlightResultDto> FinishFlight(int id, [FromBody] FlightFinishDto dto)
+        public async Task<ActionResult<FlightResultDto>> FinishFlight(int id, [FromBody] FlightFinishDto dto)
         {
-            return Execute(() => service.Finish(id, dto));
+            return await ExecuteAsync(() => service.FinishAsync(id, dto));
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = Roles.Admin)]
-        public IActionResult DeleteFlight(int id)
+        public async Task<IActionResult> DeleteFlight(int id)
         {
-            return ExecuteNoContent(() => service.Delete(id));
+            return await ExecuteNoContentAsync(() => service.DeleteAsync(id));
         }
     }
 }

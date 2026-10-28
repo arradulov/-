@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DroneRL_backend.Dtos;
@@ -19,50 +20,50 @@ namespace DroneRL_backend.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<TrainingSessionDto>> GetSessions()
+        public async Task<ActionResult<List<TrainingSessionDto>>> GetSessions()
         {
-            return Execute(() => service.GetAll());
+            return await ExecuteAsync(() => service.GetAllAsync());
         }
 
         [HttpGet("{id}")]
-        public ActionResult<TrainingSessionDto> GetSession(int id)
+        public async Task<ActionResult<TrainingSessionDto>> GetSession(int id)
         {
-            return Execute(() => service.GetById(id));
+            return await ExecuteAsync(() => service.GetByIdAsync(id));
         }
 
         [HttpPost]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<TrainingSessionDto> AddSession([FromBody] TrainingSessionCreateDto dto)
+        public async Task<ActionResult<TrainingSessionDto>> AddSession([FromBody] TrainingSessionCreateDto dto)
         {
-            return ExecuteCreated(() => service.Create(dto), nameof(GetSession), s => new { id = s.Id });
+            return await ExecuteCreatedAsync(() => service.CreateAsync(dto), nameof(GetSession), s => new { id = s.Id });
         }
 
         [HttpPut("{id}")]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<TrainingSessionDto> UpdateSession(int id, [FromBody] TrainingSessionUpdateDto dto)
+        public async Task<ActionResult<TrainingSessionDto>> UpdateSession(int id, [FromBody] TrainingSessionUpdateDto dto)
         {
-            return Execute(() => service.Update(id, dto));
+            return await ExecuteAsync(() => service.UpdateAsync(id, dto));
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = Roles.Admin)]
-        public IActionResult DeleteSession(int id)
+        public async Task<IActionResult> DeleteSession(int id)
         {
-            return ExecuteNoContent(() => service.Delete(id));
+            return await ExecuteNoContentAsync(() => service.DeleteAsync(id));
         }
 
         [HttpPost("{id}/episode")]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<TrainingSessionDto> AddEpisode(int id, [FromBody] EpisodeDto dto)
+        public async Task<ActionResult<TrainingSessionDto>> AddEpisode(int id, [FromBody] EpisodeDto dto)
         {
-            return Execute(() => service.AddEpisode(id, dto.Reward));
+            return await ExecuteAsync(() => service.AddEpisodeAsync(id, dto.Reward));
         }
 
         [HttpPost("{id}/complete")]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<TrainingSessionDto> Complete(int id)
+        public async Task<ActionResult<TrainingSessionDto>> Complete(int id)
         {
-            return Execute(() => service.Complete(id));
+            return await ExecuteAsync(() => service.CompleteAsync(id));
         }
     }
 }

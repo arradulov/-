@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using DroneRL_backend.Dtos;
 using DroneRL_backend.Exceptions;
 using DroneRL_backend.Models;
@@ -16,23 +18,20 @@ namespace DroneRL_backend.Services
             this.db = db;
         }
 
-        public List<TrainingSessionDto> GetAll()
+        public async Task<List<TrainingSessionDto>> GetAllAsync()
         {
-            return db.TrainingSessions
-                .OrderBy(s => s.Id)
-                .ToList()
-                .Select(TrainingSessionDto.From)
-                .ToList();
+            var sessions = await db.TrainingSessions.OrderBy(s => s.Id).ToListAsync();
+            return sessions.Select(TrainingSessionDto.From).ToList();
         }
 
-        public TrainingSessionDto GetById(int id)
+        public async Task<TrainingSessionDto> GetByIdAsync(int id)
         {
-            return TrainingSessionDto.From(Find(id));
+            return TrainingSessionDto.From(await FindAsync(id));
         }
 
-        public TrainingSessionDto Create(TrainingSessionCreateDto dto)
+        public async Task<TrainingSessionDto> CreateAsync(TrainingSessionCreateDto dto)
         {
-            if (!db.Drones.Any(d => d.Id == dto.DroneId))
+            if (!await db.Drones.AnyAsync(d => d.Id == dto.DroneId))
                 throw new BusinessRuleException($"Drone {dto.DroneId} not found");
 
             var session = new TrainingSession
@@ -45,47 +44,47 @@ namespace DroneRL_backend.Services
                 StartedAt = DateTime.Now
             };
             db.TrainingSessions.Add(session);
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             return TrainingSessionDto.From(session);
         }
 
-        public TrainingSessionDto Update(int id, TrainingSessionUpdateDto dto)
+        public async Task<TrainingSessionDto> UpdateAsync(int id, TrainingSessionUpdateDto dto)
         {
-            var session = Find(id);
+            var session = await FindAsync(id);
             session.ChangeAlgorithm(dto.Algorithm);
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             return TrainingSessionDto.From(session);
         }
 
         // Полёты этого обучения удаляются каскадно
-        public void Delete(int id)
+        public async Task DeleteAsync(int id)
         {
-            var session = Find(id);
-            if (db.FlightResults.Any(f => f.TrainingSessionId == id && !f.IsFinished))
+            var session = await FindAsync(id);
+            if (await db.FlightResults.AnyAsync(f => f.TrainingSessionId == id && !f.IsFinished))
                 throw new BusinessRuleException("Cannot delete training: its test flight is in progress");
             db.TrainingSessions.Remove(session);
-            db.SaveChanges();
+            await db.SaveChangesAsync();
         }
 
-        public TrainingSessionDto AddEpisode(int id, double reward)
+        public async Task<TrainingSessionDto> AddEpisodeAsync(int id, double reward)
         {
-            var session = Find(id);
+            var session = await FindAsync(id);
             session.AddEpisode(reward);
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             return TrainingSessionDto.From(session);
         }
 
-        public TrainingSessionDto Complete(int id)
+        public async Task<TrainingSessionDto> CompleteAsync(int id)
         {
-            var session = Find(id);
+            var session = await FindAsync(id);
             session.Complete();
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             return TrainingSessionDto.From(session);
         }
 
-        private TrainingSession Find(int id)
+        private async Task<TrainingSession> FindAsync(int id)
         {
-            return db.TrainingSessions.FirstOrDefault(s => s.Id == id)
+            return await db.TrainingSessions.FirstOrDefaultAsync(s => s.Id == id)
                 ?? throw new NotFoundException($"TrainingSession {id} not found");
         }
     }

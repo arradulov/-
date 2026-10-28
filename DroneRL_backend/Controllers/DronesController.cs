@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DroneRL_backend.Dtos;
@@ -20,57 +21,57 @@ namespace DroneRL_backend.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<DroneDto>> GetDrones()
+        public async Task<ActionResult<List<DroneDto>>> GetDrones()
         {
-            return Execute(() => service.GetAll());
+            return await ExecuteAsync(() => service.GetAllAsync());
         }
 
         [HttpGet("{id}")]
-        public ActionResult<DroneDto> GetDrone(int id)
+        public async Task<ActionResult<DroneDto>> GetDrone(int id)
         {
-            return Execute(() => service.GetById(id));
+            return await ExecuteAsync(() => service.GetByIdAsync(id));
         }
 
         [HttpPost]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<DroneDto> AddDrone([FromBody] DroneCreateDto dto)
+        public async Task<ActionResult<DroneDto>> AddDrone([FromBody] DroneCreateDto dto)
         {
-            return ExecuteCreated(() => service.Create(dto), nameof(GetDrone), d => new { id = d.Id });
+            return await ExecuteCreatedAsync(() => service.CreateAsync(dto), nameof(GetDrone), d => new { id = d.Id });
         }
 
         [HttpPut("{id}")]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<DroneDto> UpdateDrone(int id, [FromBody] DroneUpdateDto dto)
+        public async Task<ActionResult<DroneDto>> UpdateDrone(int id, [FromBody] DroneUpdateDto dto)
         {
-            return Execute(() => service.Update(id, dto));
+            return await ExecuteAsync(() => service.UpdateAsync(id, dto));
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = Roles.Admin)]
-        public IActionResult DeleteDrone(int id)
+        public async Task<IActionResult> DeleteDrone(int id)
         {
-            return ExecuteNoContent(() => service.Delete(id));
+            return await ExecuteNoContentAsync(() => service.DeleteAsync(id));
         }
 
         [HttpPost("{id}/activate")]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<DroneDto> Activate(int id)
+        public async Task<ActionResult<DroneDto>> Activate(int id)
         {
-            return Execute(() => service.Activate(id));
+            return await ExecuteAsync(() => service.ActivateAsync(id));
         }
 
         [HttpPost("{id}/deactivate")]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<DroneDto> Deactivate(int id)
+        public async Task<ActionResult<DroneDto>> Deactivate(int id)
         {
-            return Execute(() => service.Deactivate(id));
+            return await ExecuteAsync(() => service.DeactivateAsync(id));
         }
 
         [HttpPost("{id}/charge")]
         [Authorize(Roles = Roles.Admin)]
-        public ActionResult<DroneDto> Charge(int id, [FromBody] ChargeDto dto)
+        public async Task<ActionResult<DroneDto>> Charge(int id, [FromBody] ChargeDto dto)
         {
-            return Execute(() => service.Charge(id, dto.Percent));
+            return await ExecuteAsync(() => service.ChargeAsync(id, dto.Percent));
         }
     }
 }

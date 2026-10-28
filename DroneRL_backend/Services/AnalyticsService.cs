@@ -1,14 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using DroneRL_backend.Dtos;
 using DroneRL_backend.Exceptions;
 
 namespace DroneRL_backend.Services
 {
-    // Сводные отчёты. Фильтрация и Join выполняются в БД (EF Core переводит их в SQL),
+    // Сводные отчёты. Фильтрация и Join выполняются в БД асинхронно (ToListAsync),
     // а бизнес-методы моделей (GetAverageReward, IsSuccessful, GetAverageSpeed) — это C#-код,
-    // поэтому они вызываются после ToList(), уже в памяти.
+    // поэтому они вызываются уже после загрузки данных, в памяти.
     public class AnalyticsService
     {
         private readonly AppDbContext db;
@@ -19,15 +21,17 @@ namespace DroneRL_backend.Services
         }
 
         // 1. Обучения конкретного дрона: Drone + TrainingSession
-        public List<DroneTrainingDto> GetDroneTrainings(int droneId)
+        public async Task<List<DroneTrainingDto>> GetDroneTrainingsAsync(int droneId)
         {
-            var drone = db.Drones.FirstOrDefault(d => d.Id == droneId)
+            var drone = await db.Drones.FirstOrDefaultAsync(d => d.Id == droneId)
                 ?? throw new NotFoundException($"Drone {droneId} not found");
 
-            return db.TrainingSessions
+            var sessions = await db.TrainingSessions
                 .Where(s => s.DroneId == droneId)
                 .OrderBy(s => s.Id)
-                .ToList()
+                .ToListAsync();
+
+            return sessions
                 .Select(s => new DroneTrainingDto
                 {
                     DroneName = drone.Name,
@@ -41,19 +45,21 @@ namespace DroneRL_backend.Services
         }
 
         // 2. Полёты конкретного дрона: Drone + TrainingSession + FlightResult
-        public List<DroneFlightDto> GetDroneFlights(int droneId)
+        public async Task<List<DroneFlightDto>> GetDroneFlightsAsync(int droneId)
         {
-            var drone = db.Drones.FirstOrDefault(d => d.Id == droneId)
+            var drone = await db.Drones.FirstOrDefaultAsync(d => d.Id == droneId)
                 ?? throw new NotFoundException($"Drone {droneId} not found");
 
-            return db.TrainingSessions
+            var rows = await db.TrainingSessions
                 .Where(s => s.DroneId == droneId)
                 .Join(db.FlightResults,
                       s => s.Id,
                       f => f.TrainingSessionId,
                       (s, f) => new { Session = s, Flight = f })
                 .OrderBy(x => x.Flight.Id)
-                .ToList()
+                .ToListAsync();
+
+            return rows
                 .Select(x => new DroneFlightDto
                 {
                     Drone = drone.Name,
@@ -71,13 +77,13 @@ namespace DroneRL_backend.Services
         }
 
         // 3. Успешные полёты всех дронов, отсортированные по средней скорости
-        public List<SuccessfulFlightDto> GetSuccessfulFlights()
+        public async Task<List<SuccessfulFlightDto>> GetSuccessfulFlightsAsync()
         {
-            var rows = db.FlightResults
+            var rows = await db.FlightResults
                 .Where(f => f.IsFinished)
                 .Join(db.TrainingSessions, f => f.TrainingSessionId, s => s.Id, (f, s) => new { Flight = f, Session = s })
                 .Join(db.Drones, x => x.Session.DroneId, d => d.Id, (x, d) => new { x.Flight, x.Session, Drone = d })
-                .ToList();
+                .ToListAsync();
 
             return rows
                 .Where(x => x.Flight.IsSuccessful())
@@ -95,10 +101,10 @@ namespace DroneRL_backend.Services
         }
 
         // 4. Статистика по алгоритмам обучения
-        public List<AlgorithmStatsDto> GetAlgorithmStatistics()
+        public async Task<List<AlgorithmStatsDto>> GetAlgorithmStatisticsAsync()
         {
-            var sessions = db.TrainingSessions.Where(s => s.Episodes > 0).ToList();
-            var finishedFlights = db.FlightResults.Where(f => f.IsFinished).ToList();
+            var sessions = await db.TrainingSessions.Where(s => s.Episodes > 0).ToListAsync();
+            var finishedFlights = await db.FlightResults.Where(f => f.IsFinished).ToListAsync();
 
             return sessions
                 .GroupBy(s => s.Algorithm)
