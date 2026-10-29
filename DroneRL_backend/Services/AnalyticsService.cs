@@ -8,9 +8,7 @@ using DroneRL_backend.Exceptions;
 
 namespace DroneRL_backend.Services
 {
-    // Сводные отчёты. Фильтрация и Join выполняются в БД асинхронно (ToListAsync),
-    // а бизнес-методы моделей (GetAverageReward, IsSuccessful, GetAverageSpeed) — это C#-код,
-    // поэтому они вызываются уже после загрузки данных, в памяти.
+
     public class AnalyticsService
     {
         private readonly AppDbContext db;

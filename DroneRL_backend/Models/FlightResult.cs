@@ -4,7 +4,6 @@ using DroneRL_backend.Exceptions;
 namespace DroneRL_backend.Models
 {
     // Тестовый полёт обученного дрона.
-    // Жизненный цикл: старт → (столкновения, достижение цели) → завершение с телеметрией.
     public class FlightResult
     {
         public int Id { get; set; }
@@ -50,7 +49,7 @@ namespace DroneRL_backend.Models
             return Math.Round(Distance / FlightTime, 2);
         }
 
-        // Успешный полёт: завершён, цель достигнута, столкновений не было
+        // Успешный полёт
         public bool IsSuccessful()
         {
             return IsFinished && TargetReached && Collisions == 0;

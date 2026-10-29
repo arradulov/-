@@ -19,7 +19,7 @@ namespace DroneRL_backend.Controllers
             this.service = service;
         }
 
-        // Вход по логину и паролю → JWT-токен
+        // Вход по логину и паролю 
         [HttpPost("login")]
         public async Task<ActionResult<TokenDto>> Login([FromBody] LoginDto dto)
         {

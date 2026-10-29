@@ -8,7 +8,7 @@ using DroneRL_backend.Services;
 
 namespace DroneRL_backend.Controllers
 {
-    // Полёт — это процесс: POST (старт) → collision / reachTarget → finish.
+    // Полёт — это процесс: POST (старт) - collision / reachTarget - finish.
     // Произвольного PUT нет: результат полёта меняется только через эти действия,
     // иначе можно было бы «переписать» телеметрию без списания заряда.
     [Route("api/[controller]")]

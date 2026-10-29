@@ -5,11 +5,10 @@ using DroneRL_backend.Exceptions;
 
 namespace DroneRL_backend.Controllers
 {
-    // Общий предок контроллеров: асинхронно вызывает метод сервиса и превращает
-    // исключения бизнес-логики в HTTP-ответы (404 / 400) с сообщением об ошибке
+
     public abstract class ApiControllerBase : ControllerBase
     {
-        // 200 OK + результат
+
         protected async Task<ActionResult<T>> ExecuteAsync<T>(Func<Task<T>> action)
         {
             try
@@ -22,7 +21,7 @@ namespace DroneRL_backend.Controllers
             }
         }
 
-        // 201 Created + результат и ссылка на созданный объект
+
         protected async Task<ActionResult<T>> ExecuteCreatedAsync<T>(Func<Task<T>> action, string getActionName, Func<T, object> routeValues)
         {
             try
@@ -36,7 +35,7 @@ namespace DroneRL_backend.Controllers
             }
         }
 
-        // 204 No Content
+
         protected async Task<IActionResult> ExecuteNoContentAsync(Func<Task> action)
         {
             try

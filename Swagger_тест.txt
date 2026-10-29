@@ -1,0 +1,243 @@
+DroneRL_backend — ручная проверка через Swagger
+=================================================
+
+Адрес: http://localhost:5000/swagger
+
+Как отправить запрос в Swagger:
+  1. Нажать на нужный эндпоинт (например POST /api/Drones), он раскроется.
+  2. Нажать кнопку "Try it out" справа.
+  3. Если в адресе есть {id} — вписать число в поле id.
+  4. Если есть "Request body" — стереть пример и вставить JSON отсюда.
+  5. Нажать синюю кнопку "Execute".
+  6. Ниже в "Server response" смотреть Code (200/201/400...) и Response body.
+
+ПЕРЕД НАЧАЛОМ (чтобы номера id совпали):
+  appsettings.json -> "RecreateDatabaseOnStartup": true -> запустить проект ->
+  остановить -> вернуть false -> запустить снова.
+  Если базу не сбрасывать — смотрите реальный id в ответах и подставляйте его.
+
+
+-------------------------------------------------
+ШАГ 1. ВХОД (получить токен)
+-------------------------------------------------
+Эндпоинт:  POST /api/Auth/login
+Request body:
+{ "login": "admin", "password": "admin123" }
+
+Ожидается: 200, в ответе поле "token": "eyJ..."
+
+ВСТАВИТЬ ТОКЕН:
+  - скопировать значение token (длинная строка eyJ..., без кавычек)
+  - вверху страницы справа зелёная кнопка "Authorize" (замок)
+  - вставить в поле Value (слово Bearer НЕ писать)
+  - Authorize -> Close
+  - проверка: в любом запросе в блоке Curl должна быть строка
+    -H 'Authorization: Bearer eyJ...'
+  ВАЖНО: после обновления страницы (F5) токен надо вставить заново.
+
+Второй пользователь (для проверки 403):
+{ "login": "user", "password": "user123" }
+
+
+-------------------------------------------------
+ШАГ 2. ПОСМОТРЕТЬ ДАННЫЕ (токен не нужен)
+-------------------------------------------------
+GET /api/Drones             -> 3 дрона
+GET /api/TrainingSessions   -> 4 обучения
+GET /api/FlightResults      -> 4 полёта
+GET /api/Drones/{id}        -> id = 1
+
+
+-------------------------------------------------
+ШАГ 3. ДРОН (нужен токен admin)
+-------------------------------------------------
+3.1 Создать
+Эндпоинт:  POST /api/Drones
+Request body:
+{ "name": "Swagger Drone", "model": "PX4 X500", "batteryLevel": 50 }
+Ожидается: 201, "id": 4, "isActive": false
+
+3.2 Включить
+Эндпоинт:  POST /api/Drones/{id}/activate
+id: 4
+Request body: нет
+Ожидается: 200, "isActive": true
+
+3.3 Зарядить
+Эндпоинт:  POST /api/Drones/{id}/charge
+id: 4
+Request body:
+{ "percent": 30 }
+Ожидается: 200, "batteryLevel": 80
+
+3.4 Переименовать
+Эндпоинт:  PUT /api/Drones/{id}
+id: 4
+Request body:
+{ "name": "Swagger Drone v2", "model": "PX4 X500" }
+Ожидается: 200
+
+
+-------------------------------------------------
+ШАГ 4. ОБУЧЕНИЕ
+-------------------------------------------------
+4.1 Создать
+Эндпоинт:  POST /api/TrainingSessions
+Request body:
+{ "droneId": 4, "algorithm": "td3" }
+Ожидается: 201, "id": 5, "algorithm": "TD3", "episodes": 0
+
+4.2 Добавить эпизоды (выполнить 3 раза, каждый раз своё тело)
+Эндпоинт:  POST /api/TrainingSessions/{id}/episode
+id: 5
+Request body (1-й раз):
+{ "reward": 70 }
+Request body (2-й раз):
+{ "reward": 85 }
+Request body (3-й раз):
+{ "reward": 100 }
+Ожидается после 3-го: "episodes": 3, "averageReward": 85
+
+4.3 Завершить обучение
+Эндпоинт:  POST /api/TrainingSessions/{id}/complete
+id: 5
+Request body: нет
+Ожидается: 200, "isCompleted": true
+
+
+-------------------------------------------------
+ШАГ 5. ПОЛЁТ
+-------------------------------------------------
+5.1 Старт
+Эндпоинт:  POST /api/FlightResults
+Request body:
+{ "trainingSessionId": 5 }
+Ожидается: 201, "id": 5, "isFinished": false
+
+5.2 Цель достигнута
+Эндпоинт:  POST /api/FlightResults/{id}/reachTarget
+id: 5
+Request body: нет
+Ожидается: 200, "targetReached": true
+
+5.3 Завершить полёт
+Эндпоинт:  POST /api/FlightResults/{id}/finish
+id: 5
+Request body:
+{ "distance": 300, "flightTime": 60 }
+Ожидается: 200, "averageSpeed": 5, "isSuccessful": true
+
+5.4 Проверить, что списался заряд
+Эндпоинт:  GET /api/Drones/{id}
+id: 4
+Ожидается: "batteryLevel": 78   (было 80, минус 1% за каждые 30 с полёта)
+
+
+-------------------------------------------------
+ШАГ 6. СВОДНЫЕ ОТЧЁТЫ (нужен любой токен)
+-------------------------------------------------
+GET /api/Analytics/drone/{droneId}/trainings    droneId: 4
+GET /api/Analytics/drone/{droneId}/flights      droneId: 4
+GET /api/Analytics/successfulFlights            (полёт 5 будет в списке)
+GET /api/Analytics/algorithms                   (появится строка TD3)
+
+Для сравнения на исходных данных:
+GET /api/Analytics/drone/{droneId}/trainings    droneId: 1
+GET /api/Analytics/drone/{droneId}/flights      droneId: 1
+
+
+-------------------------------------------------
+ШАГ 7. ОШИБКИ БИЗНЕС-ЛОГИКИ (показать преподавателю)
+-------------------------------------------------
+7.1 Включить дрон с низким зарядом
+POST /api/Drones/{id}/activate      id: 3      тело: нет
+-> 400 (заряд 10% < 20%)
+
+7.2 Полёт по незавершённому обучению
+POST /api/FlightResults
+{ "trainingSessionId": 4 }
+-> 400 (обучение не завершено)
+
+7.3 Эпизод в завершённое обучение
+POST /api/TrainingSessions/{id}/episode      id: 5
+{ "reward": 50 }
+-> 400
+
+7.4 Сменить алгоритм после эпизодов
+PUT /api/TrainingSessions/{id}      id: 5
+{ "algorithm": "PPO" }
+-> 400
+
+7.5 Столкновение в уже завершённом полёте
+POST /api/FlightResults/{id}/collision      id: 5      тело: нет
+-> 400
+
+7.6 Повторно завершить полёт
+POST /api/FlightResults/{id}/finish      id: 5
+{ "distance": 100, "flightTime": 30 }
+-> 400
+
+7.7 Неверный заряд (проверка DTO)
+POST /api/Drones
+{ "name": "X", "model": "Y", "batteryLevel": 150 }
+-> 400
+
+7.8 Неизвестный алгоритм
+POST /api/TrainingSessions
+{ "droneId": 1, "algorithm": "ABC" }
+-> 400
+
+7.9 Обучение для несуществующего дрона
+POST /api/TrainingSessions
+{ "droneId": 99, "algorithm": "PPO" }
+-> 400
+
+7.10 Несуществующий объект
+GET /api/Drones/{id}      id: 99
+-> 404
+
+7.11 Неверный пароль
+POST /api/Auth/login
+{ "login": "admin", "password": "wrong" }
+-> 401
+
+
+-------------------------------------------------
+ШАГ 8. ПРОВЕРКА 401 И 403
+-------------------------------------------------
+8.1 401 — без токена
+  Authorize -> Logout -> Close
+  GET /api/Analytics/algorithms        -> 401
+  POST /api/Drones (любое тело)        -> 401
+
+8.2 403 — токен обычного пользователя
+  POST /api/Auth/login
+  { "login": "user", "password": "user123" }
+  скопировать token -> Authorize -> Logout -> вставить новый -> Authorize
+  POST /api/Drones
+  { "name": "Hack", "model": "X", "batteryLevel": 50 }
+  -> 403 (Forbidden: admin role required)
+
+8.3 user может смотреть отчёты
+  GET /api/Analytics/algorithms        -> 200
+
+8.4 Кто я
+  GET /api/Auth/me                     -> 200, login и role из токена
+
+
+-------------------------------------------------
+ШАГ 9. АДМИН: ПОЛЬЗОВАТЕЛИ (снова токен admin)
+-------------------------------------------------
+POST /api/Auth/register
+{ "login": "student", "password": "student123", "role": "user" }
+-> 201
+
+GET /api/Auth/users        -> список без хешей паролей
+
+
+-------------------------------------------------
+ШАГ 10. УДАЛЕНИЕ (каскад)
+-------------------------------------------------
+DELETE /api/Drones/{id}            id: 4      -> 204
+GET /api/TrainingSessions/{id}     id: 5      -> 404 (удалилось вместе с дроном)
+GET /api/FlightResults/{id}        id: 5      -> 404 (тоже удалилось)
