@@ -1,0 +1,6 @@
+@LR2_Devise_RL_HostAddress = http://localhost:5256
+
+GET {{LR2_Devise_RL_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
